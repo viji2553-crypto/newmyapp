@@ -1,2 +1,1 @@
-# newmyapp
-newmyapp 2nd one
+This is my 2nd commit
