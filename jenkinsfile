@@ -18,7 +18,7 @@ pipeline {
         }
         stage('Start/Restart App (PM2)') {
             steps {
-                sh 'pm2 restart app || pm2 start app.js --name app'
+                sh 'pm2 restart newmyapp || pm2 start app.js --name newmyapp'
             }
         }
     }
