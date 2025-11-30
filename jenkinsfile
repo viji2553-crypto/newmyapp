@@ -1,62 +1,25 @@
 pipeline {
     agent any
-
-    tools {
-        nodejs "NodeJS_20"   // NodeJS installation name in Jenkins
-    }
-
-    environment {
-        PM2_HOME = "${env.HOME}/.pm2"
-    }
-
     stages {
-
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/viji2553-crypto/newmyapp.git', credentialsId: 'githubcrede'
+                git url: 'https://github.com/viji2553-crypto/newmyapp.git', credentialsId: 'githubcrede'
             }
         }
-
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
             }
         }
-
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQubeServer') {
-                    sh 'sonar-scanner'
-                }
-            }
-        }
-
         stage('Test') {
             steps {
-                sh 'echo "No tests yet"'  // Replace with actual npm test if available
+                sh 'npm test' // if you added test
             }
         }
-
         stage('Start/Restart App (PM2)') {
             steps {
-                dir("${WORKSPACE}") {
-                    sh '''
-                        pm2 delete newmyapp || true
-                        pm2 start app.js --name newmyapp
-                        pm2 save
-                    '''
-                }
+                sh 'pm2 restart app || pm2 start app.js --name app'
             }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed!'
         }
     }
 }
-
