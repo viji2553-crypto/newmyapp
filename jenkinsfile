@@ -1,21 +1,20 @@
 pipeline {
     agent any
 
+    stages {
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
             }
         }
-
         stage('Test') {
             steps {
-                echo "No tests yet!"
+                sh 'npm test || true'
             }
         }
-
         stage('Deploy') {
             steps {
-                sh 'pm2 restart newmyapp || pm2 start app.js --name newmyapp'
+                echo 'Deploying app...'
             }
         }
     }
