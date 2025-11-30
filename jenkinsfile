@@ -22,7 +22,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'pm2 restart myapp || pm2 start app.js --name newmyapp'
+                sh 'pm2 restart newmyapp || pm2 start app.js --name newmyapp'
             }
         }
     }
