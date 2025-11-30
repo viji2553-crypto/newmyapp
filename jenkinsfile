@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/viji2553-crypto/newmyapp.git'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo "No tests yet!"
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'pm2 restart myapp || pm2 start app.js --name newmyapp'
+            }
+        }
+    }
+}
