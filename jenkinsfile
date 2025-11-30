@@ -1,55 +1,53 @@
 pipeline {
     agent any
 
-    // Use NodeJS tool configured in Jenkins
     tools {
-        nodejs 'NodeJS_20'  // This is the name you gave in Jenkins Global Tool Config
+        nodejs "NodeJS_20"   // NodeJS installation name in Jenkins
     }
 
     environment {
-        APP_DIR = "${WORKSPACE}"   // Jenkins workspace directory
+        PM2_HOME = "${env.HOME}/.pm2"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                // Checkout from GitHub
-                git branch: 'main', url: 'https://github.com/viji2553-crypto/newmyapp.git'
+                git branch: 'main', url: 'https://github.com/viji2553-crypto/newmyapp.git', credentialsId: 'githubcrede'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                // Run npm install in workspace
-                dir("${APP_DIR}") {
-                    sh 'npm install'
+                sh 'npm install'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQubeServer') {
+                    sh 'sonar-scanner'
                 }
             }
         }
 
         stage('Test') {
             steps {
-                dir("${APP_DIR}") {
-                    // Replace this with real tests later
-                    sh 'echo "No tests yet"'
-                }
+                sh 'echo "No tests yet"'  // Replace with actual npm test if available
             }
         }
 
-        stage('Start App (PM2)') {
+        stage('Start/Restart App (PM2)') {
             steps {
-                dir("${APP_DIR}") {
-                    // Start your app using PM2
+                dir("${WORKSPACE}") {
                     sh '''
-                    pm2 delete myapp || true
-                    pm2 start app.js --name myapp
-                    pm2 save
+                        pm2 delete newmyapp || true
+                        pm2 start app.js --name newmyapp
+                        pm2 save
                     '''
                 }
             }
         }
-
     }
 
     post {
@@ -57,7 +55,8 @@ pipeline {
             echo 'Pipeline completed successfully!'
         }
         failure {
-            echo 'Pipeline failed. Check logs.'
+            echo 'Pipeline failed!'
         }
     }
 }
+
