@@ -1,60 +1,70 @@
 pipeline {
     agent any
 
-    // Use NodeJS tool configured in Jenkins
     tools {
-        nodejs 'NodeJS_20'  // This is the name you gave in Jenkins Global Tool Config
+        nodejs 'NodeJS_20'  // NodeJS configured in Jenkins
     }
 
     environment {
-        APP_DIR = "${WORKSPACE}"   // Jenkins workspace directory
+        APP_DIR = "${WORKSPACE}"
+        IMAGE_NAME = "viji2553/newmyapp"
+        IMAGE_TAG = "v1"
+        DROPLET_USER = "root"
+        DROPLET_IP = "143.110.180.148"
+        K8S_NAMESPACE = "default"  // Change if using another namespace
     }
 
     stages {
-
         stage('Checkout') {
             steps {
-                // Checkout from GitHub
                 git branch: 'main', url: 'https://github.com/viji2553-crypto/newmyapp.git'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                // Run npm install in workspace
                 dir("${APP_DIR}") {
                     sh 'npm install'
                 }
             }
         }
 
-        stage('Test') {
+        stage('Build Docker Image') {
             steps {
                 dir("${APP_DIR}") {
-                    // Replace this with real tests later
-                    sh 'echo "No tests yet"'
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
                 }
             }
         }
 
-        stage('Start App (PM2)') {
+        stage('Push Docker Image') {
             steps {
-                dir("${APP_DIR}") {
-                    // Start your app using PM2
-                    sh '''
-                    pm2 delete myapp || true
-                    pm2 start app.js --name myapp
-                    pm2 save
-                    '''
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                    docker logout
+                    """
                 }
             }
         }
 
+        stage('Deploy to Kubernetes') {
+            steps {
+                dir("${APP_DIR}") {
+                    // Copy deployment YAML to Droplet B
+                    sh "scp k8s-deployment.yaml ${DROPLET_USER}@${DROPLET_IP}:/root/"
+
+                    // Update the image in Kubernetes
+                    sh "ssh ${DROPLET_USER}@${DROPLET_IP} kubectl set image deployment/newmyapp newmyapp=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE} || true"
+                }
+            }
+        }
     }
 
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'CI/CD Pipeline completed successfully!'
         }
         failure {
             echo 'Pipeline failed. Check logs.'
